@@ -1,0 +1,173 @@
+<?php
+ function agent_dashboard_perm(){
+  return array('Agent Dashboard');
+ }
+function agent_dashboard_menu(){
+$items =array();
+$items[]=array(
+    'path'      =>'agentdashboard',
+    'title'     =>t('Agent Dashboard'),
+    'callback'  =>'agent_dashboard',
+    'access'    =>user_access('Agent Dashboard'),
+    'weight'    =>1
+     );
+
+return $items;
+
+}
+
+function agent_dashboard()
+{
+
+global $base_url;
+global $user;
+$aid = $user->uid;
+$result1 = mysql_query("SELECT uid,name FROM users WHERE uid='".$aid."'");
+$row1 = mysql_fetch_array($result1);
+$name = $row1["name"];
+
+$brandresult = mysql_query("SELECT AgentUrl FROM brandsByBaseUrl WHERE BaseUrl='".$base_url."'");
+$brandrow = mysql_fetch_array($brandresult);
+$BrandAgentURL = $brandrow["AgentUrl"];
+
+$output .= "<table width='100%'>
+             <tr>
+              <td height='100' align='left' valign='top'>&nbsp;&nbsp;<font style='font: 20px Arial, Helvetica, sans-serif; font-weight:bold; color:#57585b;'>Agent Dashboard: ".$name."</font></td><td align='right' valign='top'><font style='font: 14px Arial, Helvetica, sans-serif; font-weight:bold; color:#57585b;'></td>
+             </tr>
+			 <tr colspan='2'><td>&nbsp;</td></tr>
+             <tr colspan='2'>
+              <td height='44' valign='top'>&nbsp;&nbsp;<font style='font: 14px Arial, Helvetica, sans-serif; font-weight:bold; color:#000000;'>Agent Sales Tracking:</td>
+             </tr>
+             <tr colspan='2'>
+              <td height='163' valign='top'>&nbsp;&nbsp;<a href='agentdashboard?act=mcas&id=".$aid."'><font style='font: 14px Arial, Helvetica, sans-serif;'>Commission Status</a></td>
+             </tr>
+            </table>";
+
+/**************************************************************************************************************************/
+
+/**************************************************************************************************************************/
+
+if($_REQUEST['act'] == mcas)
+{
+
+$uid = $_GET['id'];
+
+$link = mysql_connect('localhost', 'the_dbo', 'the_pw');
+if (!$link) {
+    die('Could not connect: ' . mysql_error());
+}
+
+mysql_select_db('the_db',$link);
+
+
+$result1 = mysql_query("SELECT uid,name FROM users WHERE uid='".$uid."'",$link);
+$row1 = mysql_fetch_array($result1);
+
+ if($_REQUEST['order']=='merup')
+ {
+  $qry = "SELECT * FROM agent_sales WHERE aid = '".$name."' ORDER BY merchant_name ASC";
+ }
+ else if($_REQUEST['order']=='merdown')
+ {
+  $qry = "SELECT * FROM agent_sales WHERE aid = '".$name."' ORDER BY merchant_name DESC";
+ }
+ else if($_REQUEST['order']=='dateup')
+ {
+  $qry = "SELECT * FROM agent_sales WHERE aid = '".$name."' ORDER BY leaddate ASC";
+ }
+ else if($_REQUEST['order']=='datedown')
+ {
+  $qry = "SELECT * FROM agent_sales WHERE aid = '".$name."' ORDER BY leaddate DESC";
+ }
+ else
+ {
+  $qry = "SELECT * FROM agent_sales WHERE aid = '".$name."'";
+ }
+
+$result = mysql_query($qry,$link);
+$name = $row1["name"];
+
+$output ='&nbsp;&nbsp;<font style="font: 14px Arial, Helvetica, sans-serif; font-weight:bold; color:#57585b;">Commission Status:'.$name.'</font>
+
+<br /><br /><table width="750" align="center" border="0" cellspacing="0" cellpadding="3">
+  <tr bgcolor="#6dc8bf">
+    <td width="150">
+    <font style="font: 14px Arial, Helvetica, sans-serif; font-weight:bold; color:#FFFFFF;">Merchant Name</font>
+    </td>
+    <td width="33">
+      <a href="agentdashboard?act=mcas&id='.$uid.'&order=merup"><img src="'.$base_url.'/images/up.gif" border="0"></a><br/><br/>
+      <a href="agentdashboard?act=mcas&id='.$uid.'&order=merdown"><img src="'.$base_url.'/images/down.gif" border="0"></a>
+     </td>
+    <td width="190"><font style="font: 14px Arial, Helvetica, sans-serif; font-weight:bold; color:#FFFFFF;">Amt Funded</font></td>
+    <td width="166"><font style="font: 14px Arial, Helvetica, sans-serif; font-weight:bold; color:#FFFFFF;">Agent Comm</font></td>
+    <td width="120">
+    <font style="font: 14px Arial, Helvetica, sans-serif; font-weight:bold; color:#FFFFFF;">Referral Date</font></td>
+    <td width="32">
+      <a href="agentdashboard?act=mcas&id='.$uid.'&order=dateup"><img src="'.$base_url.'/images/up.gif" border="0"></a><br/><br/>
+      <a href="agentdashboard?act=mcas&id='.$uid.'&order=datedown"><img src="'.$base_url.'/images/down.gif" border="0"></a>
+     </td>
+    <td width="139"><font style="font: 14px Arial, Helvetica, sans-serif; font-weight:bold; color:#FFFFFF;">Status</font></td>
+    <td width="106" colspan="2"><font style="font: 14px Arial, Helvetica, sans-serif; font-weight:bold; color:#FFFFFF;">View Comment</font></td>
+  </tr>';
+
+  while($row = mysql_fetch_array($result))
+  {
+    $asid = $row["asid"];
+
+      $output .= '<tr>
+                   <td colspan="2">'.$row["merchant_name"].'</td>
+                   <td>'.$row["advance_amount"].'</td>
+                   <td>'.$row["ag_comission"].'</td>
+                   <td colspan="2">'.$row["leaddate"].'</td>
+                   <td>'.$row["appstatus"].'</td>
+        <td>
+         <script type="text/javascript">
+          function expand(asid)
+          {
+            //alert(asid);
+            var plus = asid+"_1";
+            var minus = asid+"_0";
+            var cdiv = document.getElementById(asid);
+            var divplus = document.getElementById(plus);
+            var divminus = document.getElementById(minus);
+
+            if(cdiv.style.display=="none")
+            {
+             cdiv.style.display="block";
+             divplus.style.display="none";
+             divminus.style.display="block";
+            }
+            else if(cdiv.style.display=="block")
+            {
+             cdiv.style.display="none";
+             divplus.style.display="block";
+             divminus.style.display="none";
+            }
+          }
+         </script>
+         <span id="'.$asid.'_1"><a href="javascript:expand('.$asid.');" style="text-decoration: none;">+</a></span>
+         <span id="'.$asid.'_0" style="display:none;"><a href="javascript:expand('.$asid.');" style="text-decoration: none;">-</a></span>
+       </td>
+      </tr>
+      <tr>
+       <td colspan="13">
+        <div id="'.$asid.'" style="display:none;">';
+         $output .= "<table width='100%'>
+                      <tr>";
+         $output .= "<td colspan='2'>".$row["agentnotes"]."<hr></td>";
+         $output .="</tr></table>
+        </div>
+       </td>
+      </tr>";
+  }
+$output .= '</table><br /><br /><br />
+&nbsp;&nbsp;<a href="agentdashboard"><font style="font: 14px Arial, Helvetica, sans-serif;">Back</font></a>';
+
+}
+
+/**************************************************************************************************************************/
+
+mysql_close();
+    return $output;
+
+}
